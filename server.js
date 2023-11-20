@@ -1,10 +1,63 @@
 import express from "express";
 import axios from "axios";
 import cors from "cors";
+import nodemailer from 'nodemailer';
+import bodyParser from 'body-parser';
+import smtpTransport from 'nodemailer-smtp-transport';
+
 
 const app = express();
 app.use(cors());
 const port = 3001; // or any port of your choice
+
+
+app.use(bodyParser.json());
+// Use sendMail here
+// Create a transporter using your email service provider's settings
+// const transporter = nodemailer.createTransport({
+//   host: 'webmail.aartechsolonics.com',
+//   port: 587,
+//   secure: false,
+//   auth: {
+//     user: "info@aartechsolonics.com",
+//     pass: "Info@aartech2023",
+//   },
+// });
+
+const transporter = nodemailer.createTransport(smtpTransport({
+  host: 'webmail.aartechsolonics.com',
+  secureConnection: false,
+  tls: {
+    rejectUnauthorized: false
+  },
+  port: 587,
+  auth: {
+    user: "info@aartechsolonics.com",
+    pass: "Info@aartech2023",
+  }
+}));
+
+app.post('/sendEmail', (req, res) => {
+  const { name, email, message, companyName, lastName, salutation, country } = req.body;
+
+  const mailOptions = {
+    from: email,
+    to: ['info@aartechsolonics.com'],
+    subject: 'Contact Form Submission',
+    text: `Name: ${salutation} ${name} ${lastName}\nCountry: ${country}\nCompany: ${companyName}\nEmail: ${email}\nMessage: ${message}`,
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error('Email could not be sent:', error);
+      res.status(500).send('Email could not be sent');
+    } else {
+      console.log('Email sent:', info.response);
+      res.status(200).send('Email sent successfully');
+    }
+  });
+});
+
 
 app.get("/nse-data", async (req, res) => {
   try {
